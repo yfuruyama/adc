@@ -13,3 +13,17 @@ Available commands are:
     list       Show available credentials
     show       Show credential file content
 ```
+
+## Install
+
+```
+go get -u github.com/yfuruyama/adc
+```
+
+## Example Usage
+
+Get access token for `mycredential`
+
+```
+adc exec mycredential gcloud auth application-default print-access-token
+```

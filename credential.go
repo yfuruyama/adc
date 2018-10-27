@@ -97,7 +97,7 @@ func GetCredentialByPrefixName(name string) (*Credential, error) {
 	if len(candidates) == 1 {
 		return candidates[0], nil
 	} else if len(candidates) >= 2 {
-		return nil, fmt.Errorf("multiple credentials found: `%s` is ambiguous.", name)
+		return nil, fmt.Errorf("multiple credentials found, `%s` is ambiguous.", name)
 	}
 
 	return nil, nil

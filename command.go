@@ -33,7 +33,7 @@ func (c *CurrentCommand) Run(args []string) int {
 	}
 
 	if credential != nil {
-		fmt.Fprintf(c.outStream, credential.Name()+"\n"+"\n")
+		fmt.Fprintf(c.outStream, credential.Name()+"\n")
 	}
 	return statusSuccess
 }

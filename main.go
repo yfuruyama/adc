@@ -33,6 +33,9 @@ func main() {
 		"exec": func() (cli.Command, error) {
 			return &ExecCommand{}, nil
 		},
+		"env": func() (cli.Command, error) {
+			return &EnvCommand{}, nil
+		},
 	}
 
 	exitStatus, err := c.Run()

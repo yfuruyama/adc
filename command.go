@@ -156,3 +156,33 @@ func (c *ExecCommand) Synopsis() string {
 func (c *ExecCommand) Help() string {
 	return "TODO"
 }
+
+type EnvCommand struct{}
+
+func (c *EnvCommand) Run(args []string) int {
+	if len(args) < 1 {
+		log.Println("invalid usage")
+		return statusError
+	}
+	credentialName := args[0]
+
+	credential, err := GetCredentialByName(credentialName)
+	if err != nil {
+		return statusError
+	}
+
+	fmt.Printf(`export GOOGLE_APPLICATION_CREDENTIALS="%s"
+# Run this command to configure your shell:
+# eval "$(adc env %s)"
+`, credential.filePath, credential.filePath)
+
+	return statusSuccess
+}
+
+func (c *EnvCommand) Synopsis() string {
+	return "Display the commands to set up the credentials environment for application"
+}
+
+func (c *EnvCommand) Help() string {
+	return "TODO"
+}

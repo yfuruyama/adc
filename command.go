@@ -13,19 +13,32 @@ import (
 const (
 	statusSuccess = 0
 	statusError   = -1
+
+	envKey = "GOOGLE_APPLICATION_CREDENTIALS"
 )
 
 type CurrentCommand struct{}
 
 func (c *CurrentCommand) Run(args []string) int {
+	envVar := os.Getenv(envKey)
+	if envVar != "" {
+		credential, err := GetCredentialByPath(envVar)
+		if err != nil {
+			log.Println(err)
+			return statusError
+		}
+		fmt.Println(credential.Name())
+		return statusSuccess
+	}
+
 	credential, err := GetDefaultCredential()
 	if err != nil {
 		log.Println(err)
-		return -1
+		return statusError
 	}
-	// if user account, get user name and print it
-	log.Println(credential.ClientId)
-	return 0
+	fmt.Println(credential.Name())
+
+	return statusSuccess
 }
 
 func (c *CurrentCommand) Synopsis() string {
@@ -129,7 +142,7 @@ func (c *ExecCommand) Run(args []string) int {
 	}
 
 	env := os.Environ()
-	env = append(env, "GOOGLE_APPLICATION_CREDENTIALS="+credential.filePath)
+	env = append(env, fmt.Sprintf("%s=%s", envKey, credential.filePath))
 
 	cmd := exec.Command(child, childArgs...)
 	cmd.Stdout = os.Stdout
@@ -171,10 +184,10 @@ func (c *EnvCommand) Run(args []string) int {
 		return statusError
 	}
 
-	fmt.Printf(`export GOOGLE_APPLICATION_CREDENTIALS="%s"
+	fmt.Printf(`export %s="%s"
 # Run this command to configure your shell:
 # eval "$(adc env %s)"
-`, credential.filePath, credential.filePath)
+`, envKey, credential.filePath, credential.filePath)
 
 	return statusSuccess
 }

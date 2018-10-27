@@ -88,6 +88,10 @@ func GetCredentialByName(name string) (*Credential, error) {
 	return nil, nil
 }
 
+func GetCredentialByPath(path string) (*Credential, error) {
+	return readCredentialFile(path)
+}
+
 func GetAllCredentials() ([]*Credential, error) {
 	storePath, err := GetCredentialStorePath()
 	if err != nil {

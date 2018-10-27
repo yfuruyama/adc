@@ -25,5 +25,5 @@ go get -u github.com/yfuruyama/adc
 Get access token for `mycredential`
 
 ```
-adc exec mycredential gcloud auth application-default print-access-token
+adc exec mycredential -- gcloud auth application-default print-access-token
 ```

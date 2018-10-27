@@ -203,8 +203,20 @@ func (c *ExecCommand) Run(args []string) int {
 		return statusError
 	}
 	credentialName := args[0]
-	child := args[1]
-	childArgs := args[2:]
+
+	var child string
+	var childArgs []string
+	if args[1] == "--" {
+		if len(args) < 3 {
+			fmt.Fprintf(c.errStream, c.Help()+"\n")
+			return statusError
+		}
+		child = args[2]
+		childArgs = args[3:]
+	} else {
+		child = args[1]
+		childArgs = args[2:]
+	}
 
 	credential, err := GetCredentialByPrefixName(credentialName)
 	if err != nil {
@@ -243,7 +255,7 @@ func (c *ExecCommand) Synopsis() string {
 
 func (c *ExecCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s exec <credential> <command> <args>...`, cmd)
+	return fmt.Sprintf(`Usage: %s exec <credential> [--] <command> [<args>...]`, cmd)
 }
 
 type EnvCommand struct {

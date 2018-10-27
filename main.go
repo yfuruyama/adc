@@ -25,6 +25,11 @@ func main() {
 				Command{os.Stdout, os.Stderr},
 			}, nil
 		},
+		"show": func() (cli.Command, error) {
+			return &ShowCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
+		},
 		"add": func() (cli.Command, error) {
 			return &AddCommand{
 				Command{os.Stdout, os.Stderr},

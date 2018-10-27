@@ -103,6 +103,50 @@ func (c *ListCommand) Help() string {
 	return fmt.Sprintf(`Usage: %s list`, cmd)
 }
 
+type ShowCommand struct {
+	Command
+}
+
+func (c *ShowCommand) Run(args []string) int {
+	if len(args) < 1 {
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
+		return statusError
+	}
+	credentialName := args[0]
+
+	credential, err := GetCredentialByPrefixName(credentialName)
+	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
+		return statusError
+	}
+	if credential == nil {
+		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+		return statusError
+	}
+
+	file, err := os.Open(credential.filePath)
+	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to read credential: %s\n", err)
+		return statusError
+	}
+
+	if _, err := io.Copy(c.outStream, file); err != nil {
+		fmt.Fprintf(c.errStream, "failed to read credential: %s\n", err)
+		return statusError
+	}
+
+	return statusSuccess
+}
+
+func (c *ShowCommand) Synopsis() string {
+	return "Show credential file content"
+}
+
+func (c *ShowCommand) Help() string {
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s show <credential>`, cmd)
+}
+
 type AddCommand struct {
 	Command
 }

@@ -11,4 +11,5 @@ Available commands are:
     env        Display the commands to set up the credential environment for application
     exec       Execute the command with the specified credential
     list       Show available credentials
+    show       Show credential file content
 ```

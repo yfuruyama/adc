@@ -2,10 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"os/user"
 	"path"
+)
+
+const (
+	statusSuccess = 0
+	statusError   = -1
 )
 
 type CurrentCommand struct{}
@@ -47,13 +52,6 @@ func (c *ListCommand) Run(args []string) int {
 		fmt.Println()
 	}
 
-	// No  Active  Credential                        Type
-	// -------------------------------------------------------------
-	// 1           addsict@gmail.com                 User Account
-	// 2           yfuruyama@gmail.com               User Account
-	// 3   *       yfuruyama-sandbox-98246f6f9623    Service Account
-	// 4           yfuruyama-sandbox-123456789012    Service Account
-
 	return 0
 }
 
@@ -65,66 +63,88 @@ func (c *ListCommand) Help() string {
 	return "TODO"
 }
 
-type LoginCommand struct{}
+type AddCommand struct{}
 
-func (c *LoginCommand) Run(args []string) int {
-	// remember current active credential
-	// call `gcloud auth application-default login`
-	// then call `gcloud auth application-default print-access-token`
-	// then request to https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={TOKEN}
-	// then response.email to filename and copy
-	// then copy ~/.config/gcloud/application_default_credentials.json to ~/.config/adc/{filename}.json
-	// in the last, recover active credential
-	return 0
+func (c *AddCommand) Run(args []string) int {
+	if len(args) == 0 {
+		fmt.Println("file not specified")
+		return statusError
+	}
+
+	filePath := args[0]
+	credentialName := path.Base(filePath)
+
+	// TODO: check valid credential
+	src, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println(err)
+		return statusError
+	}
+
+	storePath, err := GetCredentialStorePath()
+	if err != nil {
+		fmt.Println(err)
+		return statusError
+	}
+	destPath := path.Join(storePath, credentialName)
+	dest, err := os.Create(destPath)
+
+	if _, err := io.Copy(dest, src); err != nil {
+		fmt.Println(err)
+		return statusError
+	}
+
+	fmt.Println("Added to credentials store")
+	return statusSuccess
 }
 
-func (c *LoginCommand) Synopsis() string {
-	return "Alias for `gcloud auth application-default login`"
+func (c *AddCommand) Synopsis() string {
+	return "Add service account credential"
 }
 
-func (c *LoginCommand) Help() string {
+func (c *AddCommand) Help() string {
 	return "TODO"
 }
 
 type UseCommand struct{}
 
 func (c *UseCommand) Run(args []string) int {
-	if len(args) == 0 {
-		log.Println("invalid usage")
-		return -1
-	}
-	credentialName := args[0]
+	// if len(args) == 0 {
+	// log.Println("invalid usage")
+	// return -1
+	// }
+	// credentialName := args[0]
 
-	credential, err := GetCredentialByName(credentialName)
-	if err != nil {
-		return -1
-	}
-	if credential == nil {
-		fmt.Printf("Credential `%s` not found\n", credentialName)
-		return -1
-	}
+	// credential, err := GetCredentialByName(credentialName)
+	// if err != nil {
+	// return -1
+	// }
+	// if credential == nil {
+	// fmt.Printf("Credential `%s` not found\n", credentialName)
+	// return -1
+	// }
 
-	currentUser, err := user.Current()
-	if err != nil {
-		fmt.Println(err)
-		return -1
-	}
+	// currentUser, err := user.Current()
+	// if err != nil {
+	// fmt.Println(err)
+	// return -1
+	// }
 
-	adcpath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
+	// adcpath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
 
-	// delete old one
-	if err := os.Remove(adcpath); err != nil {
-		fmt.Println(err)
-	}
+	// // delete old one
+	// if err := os.Remove(adcpath); err != nil {
+	// fmt.Println(err)
+	// }
 
-	credpath := path.Join(currentUser.HomeDir, ".config", "adc", credential.fileName)
+	// credpath := path.Join(currentUser.HomeDir, ".config", "adc", credential.fileName)
 
-	if err := os.Symlink(credpath, adcpath); err != nil {
-		fmt.Printf("Activate failed: %s\n", err)
-		return -1
-	}
+	// if err := os.Symlink(credpath, adcpath); err != nil {
+	// fmt.Printf("Activate failed: %s\n", err)
+	// return -1
+	// }
 
-	fmt.Printf("Credential `%s` activated\n", credentialName)
+	// fmt.Printf("Credential `%s` activated\n", credentialName)
 
 	return 0
 }

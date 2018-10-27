@@ -44,9 +44,6 @@ type Credential struct {
 	TokenUri                string `json:"token_uri"`
 	AuthProviderX509CertUrl string `json:"auth_provider_x509_cert_url"`
 	ClientX509CertUrl       string `json:"client_x509_cert_url"`
-
-	// additional information by this tool
-	fileName string
 }
 
 func GetDefaultCredential() (*Credential, error) {
@@ -87,13 +84,12 @@ func GetCredentialByName(name string) (*Credential, error) {
 }
 
 func GetAllCredentials() ([]*Credential, error) {
-	currentUser, err := user.Current()
+	storePath, err := GetCredentialStorePath()
 	if err != nil {
 		return nil, err
 	}
 
-	dirpath := path.Join(currentUser.HomeDir, ".config", "adc")
-	dir, err := os.Open(dirpath)
+	dir, err := os.Open(storePath)
 	if err != nil {
 		return nil, err
 	}
@@ -106,14 +102,20 @@ func GetAllCredentials() ([]*Credential, error) {
 	credentials := make([]*Credential, 0)
 	for _, fileinfo := range fileinfoList {
 		fileName := fileinfo.Name()
-		filepath := path.Join(currentUser.HomeDir, ".config", "adc", fileName)
+		filepath := path.Join(storePath, fileName)
 		credential, err := readCredentialFile(filepath)
 		if err != nil {
 			return nil, err
 		}
-		credential.fileName = fileName
 		credentials = append(credentials, credential)
 	}
+
+	// add user account credential
+	defaultCredential, err := GetDefaultCredential()
+	if err != nil {
+		return nil, err
+	}
+	credentials = append(credentials, defaultCredential)
 
 	return credentials, nil
 }
@@ -121,11 +123,29 @@ func GetAllCredentials() ([]*Credential, error) {
 func (c *Credential) Name() string {
 	switch c.Type {
 	case CredentialTypeUserAccount:
-		return c.fileName
+		return "authorized_user"
 	case CredentialTypeServiceAccount:
 		return fmt.Sprintf("%s-%s", c.ProjectId, c.PrivateKeyId[0:12])
 	}
 	return ""
+}
+
+func InitCredentialsStore() error {
+	path, err := GetCredentialStorePath()
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(path, os.ModePerm)
+}
+
+func GetCredentialStorePath() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: customize by user
+	return path.Join(currentUser.HomeDir, ".config", "adc", "credentials"), nil
 }
 
 func readCredentialFile(filename string) (*Credential, error) {

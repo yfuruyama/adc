@@ -64,6 +64,11 @@ func (c *ListCommand) Run(args []string) int {
 		return statusError
 	}
 
+	if len(credentials) == 0 {
+		fmt.Fprintf(c.outStream, "No credentials found")
+		return statusSuccess
+	}
+
 	table := tablewriter.NewWriter(c.outStream)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)

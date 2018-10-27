@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -11,7 +10,7 @@ import (
 func initialize() {
 	if err := InitCredentialsStore(); err != nil {
 		fmt.Printf("failed to initialize credentials store: %s\n", err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 }
 
@@ -50,8 +49,7 @@ func main() {
 
 	exitStatus, err := c.Run()
 	if err != nil {
-		log.Println(err)
+		fmt.Fprintf(os.Stderr, "error: %s", err)
 	}
-
 	os.Exit(exitStatus)
 }

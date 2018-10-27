@@ -81,16 +81,25 @@ func GetDefaultCredential() (*Credential, error) {
 	return &credential, nil
 }
 
-func GetCredentialByName(name string) (*Credential, error) {
+func GetCredentialByPrefixName(name string) (*Credential, error) {
 	credentials, err := GetAllCredentials()
 	if err != nil {
 		return nil, err
 	}
+
+	candidates := make([]*Credential, 0)
 	for _, credential := range credentials {
-		if credential.Name() == name {
-			return credential, nil
+		if strings.HasPrefix(credential.Name(), name) {
+			candidates = append(candidates, credential)
 		}
 	}
+
+	if len(candidates) == 1 {
+		return candidates[0], nil
+	} else if len(candidates) >= 2 {
+		return nil, fmt.Errorf("Multiple credentials found. `%s` is ambiguous", name)
+	}
+
 	return nil, nil
 }
 

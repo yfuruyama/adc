@@ -33,7 +33,7 @@ func (c *CurrentCommand) Run(args []string) int {
 	}
 
 	if credential != nil {
-		fmt.Fprintf(c.outStream, credential.Name())
+		fmt.Fprintf(c.outStream, credential.Name()+"\n"+"\n")
 	}
 	return statusSuccess
 }
@@ -65,7 +65,7 @@ func (c *ListCommand) Run(args []string) int {
 	}
 
 	if len(credentials) == 0 {
-		fmt.Fprintf(c.outStream, "No credentials found")
+		fmt.Fprintf(c.outStream, "No credentials found\n")
 		return statusSuccess
 	}
 
@@ -162,7 +162,7 @@ func (c *ExecCommand) Run(args []string) int {
 	child := args[1]
 	childArgs := args[2:]
 
-	credential, err := GetCredentialByName(credentialName)
+	credential, err := GetCredentialByPrefixName(credentialName)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
 		return statusError
@@ -213,7 +213,7 @@ func (c *EnvCommand) Run(args []string) int {
 	}
 	credentialName := args[0]
 
-	credential, err := GetCredentialByName(credentialName)
+	credential, err := GetCredentialByPrefixName(credentialName)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
 		return statusError

@@ -22,19 +22,29 @@ func main() {
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
 		"list": func() (cli.Command, error) {
-			return &ListCommand{}, nil
+			return &ListCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
 		},
 		"add": func() (cli.Command, error) {
-			return &AddCommand{}, nil
+			return &AddCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
 		},
 		"current": func() (cli.Command, error) {
-			return &CurrentCommand{}, nil
+			return &CurrentCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
 		},
 		"exec": func() (cli.Command, error) {
-			return &ExecCommand{}, nil
+			return &ExecCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
 		},
 		"env": func() (cli.Command, error) {
-			return &EnvCommand{}, nil
+			return &EnvCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
 		},
 	}
 

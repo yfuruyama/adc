@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -14,48 +13,58 @@ import (
 
 const (
 	statusSuccess = 0
-	statusError   = -1
-
-	envKey = "GOOGLE_APPLICATION_CREDENTIALS"
+	statusError   = 1
 )
 
-type CurrentCommand struct{}
+type Command struct {
+	outStream io.Writer
+	errStream io.Writer
+}
+
+type CurrentCommand struct {
+	Command
+}
 
 func (c *CurrentCommand) Run(args []string) int {
 	credential, err := GetCurrentCredential()
 	if err != nil {
-		log.Println(err)
+		fmt.Fprintf(c.errStream, "failed to get current credential: %s\n", err)
 		return statusError
 	}
 
-	fmt.Println(credential.Name())
+	if credential != nil {
+		fmt.Fprintf(c.outStream, credential.Name())
+	}
 	return statusSuccess
 }
 
 func (c *CurrentCommand) Synopsis() string {
-	return "Show current credential"
+	return "Show current active credential"
 }
 
 func (c *CurrentCommand) Help() string {
-	return "TODO"
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s current`, cmd)
 }
 
-type ListCommand struct{}
+type ListCommand struct {
+	Command
+}
 
 func (c *ListCommand) Run(args []string) int {
 	credentials, err := GetAllCredentials()
 	if err != nil {
-		log.Println(err)
-		return -1
+		fmt.Fprintf(c.errStream, "failed to get credentials: %s\n", err)
+		return statusError
 	}
 
 	currentCredential, err := GetCurrentCredential()
 	if err != nil {
-		log.Println(err)
-		return -1
+		fmt.Fprintf(c.errStream, "failed to get current active credential: %s\n", err)
+		return statusError
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(c.outStream)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
@@ -63,7 +72,7 @@ func (c *ListCommand) Run(args []string) int {
 
 	for _, credential := range credentials {
 		var active string
-		if credential.Name() == currentCredential.Name() {
+		if currentCredential != nil && credential.Name() == currentCredential.Name() {
 			active = "(*)"
 		}
 		var projectId string
@@ -85,14 +94,17 @@ func (c *ListCommand) Synopsis() string {
 }
 
 func (c *ListCommand) Help() string {
-	return "TODO"
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s list`, cmd)
 }
 
-type AddCommand struct{}
+type AddCommand struct {
+	Command
+}
 
 func (c *AddCommand) Run(args []string) int {
-	if len(args) == 0 {
-		fmt.Println("file not specified")
+	if len(args) < 1 {
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
 		return statusError
 	}
 
@@ -102,24 +114,24 @@ func (c *AddCommand) Run(args []string) int {
 	// TODO: check valid credential
 	src, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(c.errStream, "failed to read credential file: %s\n", err)
 		return statusError
 	}
 
 	storePath, err := GetCredentialStorePath()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(c.errStream, "failed to add credential file: %s\n", err)
 		return statusError
 	}
 	destPath := path.Join(storePath, credentialName)
 	dest, err := os.Create(destPath)
 
 	if _, err := io.Copy(dest, src); err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(c.errStream, "failed to add credential file: %s\n", err)
 		return statusError
 	}
 
-	fmt.Println("Added to credentials store")
+	fmt.Fprintf(c.outStream, "Added to credentials store: %s\n", destPath)
 	return statusSuccess
 }
 
@@ -128,15 +140,18 @@ func (c *AddCommand) Synopsis() string {
 }
 
 func (c *AddCommand) Help() string {
-	return "TODO"
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s add <SERVICE_ACCOUNT_CREDENTIAL_KEY.json>`, cmd)
 }
 
-type ExecCommand struct{}
+type ExecCommand struct {
+	Command
+}
 
 func (c *ExecCommand) Run(args []string) int {
 	if len(args) < 2 {
-		log.Println("invalid usage")
-		return -1
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
+		return statusError
 	}
 	credentialName := args[0]
 	child := args[1]
@@ -144,11 +159,12 @@ func (c *ExecCommand) Run(args []string) int {
 
 	credential, err := GetCredentialByName(credentialName)
 	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
 		return statusError
 	}
 	if credential == nil {
-		fmt.Printf("Credential `%s` not found\n", credentialName)
-		return -1
+		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+		return statusError
 	}
 
 	env := os.Environ()
@@ -164,7 +180,7 @@ func (c *ExecCommand) Run(args []string) int {
 				return status.ExitStatus()
 			}
 		} else {
-			fmt.Println(err)
+			fmt.Fprintf(c.errStream, "%s", err)
 			return statusError
 		}
 	}
@@ -173,39 +189,49 @@ func (c *ExecCommand) Run(args []string) int {
 }
 
 func (c *ExecCommand) Synopsis() string {
-	return "TODO"
+	return "Execute the command with the specified credential"
 }
 
 func (c *ExecCommand) Help() string {
-	return "TODO"
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s exec <credential> <command> <args>...`, cmd)
 }
 
-type EnvCommand struct{}
+type EnvCommand struct {
+	Command
+}
 
 func (c *EnvCommand) Run(args []string) int {
 	if len(args) < 1 {
-		log.Println("invalid usage")
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
 		return statusError
 	}
 	credentialName := args[0]
 
 	credential, err := GetCredentialByName(credentialName)
 	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
+		return statusError
+	}
+	if credential == nil {
+		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
 		return statusError
 	}
 
-	fmt.Printf(`export GOOGLE_APPLICATION_CREDENTIALS="%s"
+	cmd := os.Args[0]
+	fmt.Fprintf(c.outStream, `export GOOGLE_APPLICATION_CREDENTIALS="%s"
 # Run this command to configure your shell:
-# eval "$(adc env %s)"
-`, credential.filePath, credential.filePath)
+# eval "$(%s env %s)"
+`, credential.filePath, cmd, credential.Name())
 
 	return statusSuccess
 }
 
 func (c *EnvCommand) Synopsis() string {
-	return "Display the commands to set up the credentials environment for application"
+	return "Display the commands to set up the credential environment for application"
 }
 
 func (c *EnvCommand) Help() string {
-	return "TODO"
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s env <credential>`, cmd)
 }

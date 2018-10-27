@@ -57,6 +57,11 @@ func GetDefaultCredential() (*Credential, error) {
 	}
 
 	filePath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
+	if _, err := os.Stat(filePath); err != nil {
+		// application_default_credentials.json not found
+		return nil, nil
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -126,26 +131,20 @@ func GetAllCredentials() ([]*Credential, error) {
 	if err != nil {
 		return nil, err
 	}
-	credentials = append(credentials, defaultCredential)
+	if defaultCredential != nil {
+		credentials = append(credentials, defaultCredential)
+	}
 
 	return credentials, nil
 }
 
 func GetCurrentCredential() (*Credential, error) {
-	envVar := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	if envVar != "" {
-		credential, err := GetCredentialByPath(envVar)
-		if err != nil {
-			return nil, err
+	if envVar := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); envVar != "" {
+		if _, err := os.Stat(envVar); err == nil {
+			return GetCredentialByPath(envVar)
 		}
-		return credential, nil
 	}
-
-	credential, err := GetDefaultCredential()
-	if err != nil {
-		return nil, err
-	}
-	return credential, nil
+	return GetDefaultCredential()
 }
 
 func (c *Credential) Name() string {

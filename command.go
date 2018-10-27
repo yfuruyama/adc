@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path"
 	"syscall"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 const (
@@ -20,24 +22,13 @@ const (
 type CurrentCommand struct{}
 
 func (c *CurrentCommand) Run(args []string) int {
-	envVar := os.Getenv(envKey)
-	if envVar != "" {
-		credential, err := GetCredentialByPath(envVar)
-		if err != nil {
-			log.Println(err)
-			return statusError
-		}
-		fmt.Println(credential.Name())
-		return statusSuccess
-	}
-
-	credential, err := GetDefaultCredential()
+	credential, err := GetCurrentCredential()
 	if err != nil {
 		log.Println(err)
 		return statusError
 	}
-	fmt.Println(credential.Name())
 
+	fmt.Println(credential.Name())
 	return statusSuccess
 }
 
@@ -58,16 +49,35 @@ func (c *ListCommand) Run(args []string) int {
 		return -1
 	}
 
-	fmt.Println("No  Credential                      Type")
-	fmt.Println("-------------------------------------------------------")
-	for i, credential := range credentials {
-		fmt.Printf("%d   ", i+1)
-		fmt.Printf("%s   ", credential.Name())
-		fmt.Printf("%s", credential.Type.Name())
-		fmt.Println()
+	currentCredential, err := GetCurrentCredential()
+	if err != nil {
+		log.Println(err)
+		return -1
 	}
 
-	return 0
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetHeader([]string{"Credential", "Active", "Project", "Type"})
+
+	for _, credential := range credentials {
+		var active string
+		if credential.Name() == currentCredential.Name() {
+			active = "(*)"
+		}
+		var projectId string
+		if credential.Type == CredentialTypeServiceAccount {
+			projectId = credential.ProjectId
+		} else {
+			projectId = "-"
+		}
+		table.Append([]string{credential.Name(), active, projectId, credential.Type.Name()})
+	}
+
+	table.Render()
+
+	return statusSuccess
 }
 
 func (c *ListCommand) Synopsis() string {
@@ -142,7 +152,7 @@ func (c *ExecCommand) Run(args []string) int {
 	}
 
 	env := os.Environ()
-	env = append(env, fmt.Sprintf("%s=%s", envKey, credential.filePath))
+	env = append(env, "GOOGLE_APPLICATION_CREDENTIALS="+credential.filePath)
 
 	cmd := exec.Command(child, childArgs...)
 	cmd.Stdout = os.Stdout
@@ -184,10 +194,10 @@ func (c *EnvCommand) Run(args []string) int {
 		return statusError
 	}
 
-	fmt.Printf(`export %s="%s"
+	fmt.Printf(`export GOOGLE_APPLICATION_CREDENTIALS="%s"
 # Run this command to configure your shell:
 # eval "$(adc env %s)"
-`, envKey, credential.filePath, credential.filePath)
+`, credential.filePath, credential.filePath)
 
 	return statusSuccess
 }

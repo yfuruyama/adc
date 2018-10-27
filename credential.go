@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 )
 
 type CredentialType string
@@ -130,12 +131,31 @@ func GetAllCredentials() ([]*Credential, error) {
 	return credentials, nil
 }
 
+func GetCurrentCredential() (*Credential, error) {
+	envVar := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if envVar != "" {
+		credential, err := GetCredentialByPath(envVar)
+		if err != nil {
+			return nil, err
+		}
+		return credential, nil
+	}
+
+	credential, err := GetDefaultCredential()
+	if err != nil {
+		return nil, err
+	}
+	return credential, nil
+}
+
 func (c *Credential) Name() string {
 	switch c.Type {
 	case CredentialTypeUserAccount:
 		return "authorized_user"
 	case CredentialTypeServiceAccount:
-		return fmt.Sprintf("%s-%s", c.ProjectId, c.PrivateKeyId[0:12])
+		parts := strings.Split(c.ClientEmail, "@")
+		serviceAccountId := parts[0]
+		return fmt.Sprintf("%s-%s", serviceAccountId, c.PrivateKeyId[0:6])
 	}
 	return ""
 }

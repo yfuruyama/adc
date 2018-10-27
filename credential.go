@@ -44,6 +44,9 @@ type Credential struct {
 	TokenUri                string `json:"token_uri"`
 	AuthProviderX509CertUrl string `json:"auth_provider_x509_cert_url"`
 	ClientX509CertUrl       string `json:"client_x509_cert_url"`
+
+	// for internal use
+	filePath string
 }
 
 func GetDefaultCredential() (*Credential, error) {
@@ -52,8 +55,8 @@ func GetDefaultCredential() (*Credential, error) {
 		return nil, err
 	}
 
-	filepath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
-	file, err := os.Open(filepath)
+	filePath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +70,8 @@ func GetDefaultCredential() (*Credential, error) {
 	if err := json.Unmarshal(b, &credential); err != nil {
 		return nil, err
 	}
+	credential.filePath = filePath
+
 	return &credential, nil
 }
 
@@ -102,11 +107,12 @@ func GetAllCredentials() ([]*Credential, error) {
 	credentials := make([]*Credential, 0)
 	for _, fileinfo := range fileinfoList {
 		fileName := fileinfo.Name()
-		filepath := path.Join(storePath, fileName)
-		credential, err := readCredentialFile(filepath)
+		filePath := path.Join(storePath, fileName)
+		credential, err := readCredentialFile(filePath)
 		if err != nil {
 			return nil, err
 		}
+		credential.filePath = filePath
 		credentials = append(credentials, credential)
 	}
 

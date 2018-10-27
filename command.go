@@ -5,7 +5,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
+	"syscall"
 )
 
 const (
@@ -106,53 +108,51 @@ func (c *AddCommand) Help() string {
 	return "TODO"
 }
 
-type UseCommand struct{}
+type ExecCommand struct{}
 
-func (c *UseCommand) Run(args []string) int {
-	// if len(args) == 0 {
-	// log.Println("invalid usage")
-	// return -1
-	// }
-	// credentialName := args[0]
+func (c *ExecCommand) Run(args []string) int {
+	if len(args) < 2 {
+		log.Println("invalid usage")
+		return -1
+	}
+	credentialName := args[0]
+	child := args[1]
+	childArgs := args[2:]
 
-	// credential, err := GetCredentialByName(credentialName)
-	// if err != nil {
-	// return -1
-	// }
-	// if credential == nil {
-	// fmt.Printf("Credential `%s` not found\n", credentialName)
-	// return -1
-	// }
+	credential, err := GetCredentialByName(credentialName)
+	if err != nil {
+		return statusError
+	}
+	if credential == nil {
+		fmt.Printf("Credential `%s` not found\n", credentialName)
+		return -1
+	}
 
-	// currentUser, err := user.Current()
-	// if err != nil {
-	// fmt.Println(err)
-	// return -1
-	// }
+	env := os.Environ()
+	env = append(env, "GOOGLE_APPLICATION_CREDENTIALS="+credential.filePath)
 
-	// adcpath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
+	cmd := exec.Command(child, childArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = env
+	if err := cmd.Run(); err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				return status.ExitStatus()
+			}
+		} else {
+			fmt.Println(err)
+			return statusError
+		}
+	}
 
-	// // delete old one
-	// if err := os.Remove(adcpath); err != nil {
-	// fmt.Println(err)
-	// }
-
-	// credpath := path.Join(currentUser.HomeDir, ".config", "adc", credential.fileName)
-
-	// if err := os.Symlink(credpath, adcpath); err != nil {
-	// fmt.Printf("Activate failed: %s\n", err)
-	// return -1
-	// }
-
-	// fmt.Printf("Credential `%s` activated\n", credentialName)
-
-	return 0
+	return statusSuccess
 }
 
-func (c *UseCommand) Synopsis() string {
-	return "Set a credential to the default credential"
+func (c *ExecCommand) Synopsis() string {
+	return "TODO"
 }
 
-func (c *UseCommand) Help() string {
+func (c *ExecCommand) Help() string {
 	return "TODO"
 }

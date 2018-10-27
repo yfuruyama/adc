@@ -30,8 +30,8 @@ func main() {
 		"current": func() (cli.Command, error) {
 			return &CurrentCommand{}, nil
 		},
-		"use": func() (cli.Command, error) {
-			return &UseCommand{}, nil
+		"exec": func() (cli.Command, error) {
+			return &ExecCommand{}, nil
 		},
 	}
 

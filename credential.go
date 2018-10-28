@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"os/user"
 	"path"
 	"strings"
+
+	"golang.org/x/oauth2/google"
 )
 
 type CredentialType string
@@ -48,6 +51,7 @@ type Credential struct {
 
 	// for internal use
 	filePath string
+	json     []byte
 }
 
 func GetDefaultCredential() (*Credential, error) {
@@ -62,23 +66,7 @@ func GetDefaultCredential() (*Credential, error) {
 		return nil, nil
 	}
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var credential Credential
-	if err := json.Unmarshal(b, &credential); err != nil {
-		return nil, err
-	}
-	credential.filePath = filePath
-
-	return &credential, nil
+	return readCredentialFile(filePath)
 }
 
 func GetCredentialByPrefixName(name string) (*Credential, error) {
@@ -131,7 +119,6 @@ func GetAllCredentials() ([]*Credential, error) {
 		if err != nil {
 			return nil, err
 		}
-		credential.filePath = filePath
 		credentials = append(credentials, credential)
 	}
 
@@ -168,6 +155,19 @@ func (c *Credential) Name() string {
 	return ""
 }
 
+func (c *Credential) GetAccessToken() (string, error) {
+	ctx := context.Background()
+	const scope = "https://www.googleapis.com/auth/cloud-platform"
+	googleCred, nil := google.CredentialsFromJSON(ctx, c.json, scope)
+
+	token, err := googleCred.TokenSource.Token()
+	if err != nil {
+		return "", err
+	}
+
+	return token.AccessToken, nil
+}
+
 func InitCredentialsStore() error {
 	path, err := GetCredentialStorePath()
 	if err != nil {
@@ -201,5 +201,9 @@ func readCredentialFile(filename string) (*Credential, error) {
 	if err := json.Unmarshal(b, &credential); err != nil {
 		return nil, err
 	}
+
+	credential.filePath = filename
+	credential.json = b
+
 	return &credential, nil
 }

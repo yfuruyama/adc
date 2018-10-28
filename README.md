@@ -12,18 +12,11 @@ Available commands are:
     exec       Execute the command with the specified credential
     list       Show available credentials
     show       Show credential file content
+    token      Prints access token for the credential
 ```
 
 ## Install
 
 ```
 go get -u github.com/yfuruyama/adc
-```
-
-## Example Usage
-
-Get access token for `mycredential`
-
-```
-adc exec mycredential -- gcloud auth application-default print-access-token
 ```

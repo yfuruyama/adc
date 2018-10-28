@@ -296,3 +296,44 @@ func (c *EnvCommand) Help() string {
 	cmd := os.Args[0]
 	return fmt.Sprintf(`Usage: %s env <credential>`, cmd)
 }
+
+type TokenCommand struct {
+	Command
+}
+
+func (c *TokenCommand) Run(args []string) int {
+	if len(args) < 1 {
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
+		return statusError
+	}
+	credentialName := args[0]
+
+	credential, err := GetCredentialByPrefixName(credentialName)
+	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
+		return statusError
+	}
+	if credential == nil {
+		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+		return statusError
+	}
+
+	token, err := credential.GetAccessToken()
+	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get token: %s\n", err)
+		return statusError
+	}
+
+	fmt.Fprintf(c.outStream, token+"\n")
+
+	return statusSuccess
+}
+
+func (c *TokenCommand) Synopsis() string {
+	return "Prints access token for the credential"
+}
+
+func (c *TokenCommand) Help() string {
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s token <credential>`, cmd)
+}

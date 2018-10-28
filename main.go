@@ -50,6 +50,11 @@ func main() {
 				Command{os.Stdout, os.Stderr},
 			}, nil
 		},
+		"token": func() (cli.Command, error) {
+			return &TokenCommand{
+				Command{os.Stdout, os.Stderr},
+			}, nil
+		},
 	}
 
 	exitStatus, err := c.Run()

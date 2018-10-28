@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"syscall"
 
 	"github.com/olekukonko/tablewriter"
@@ -16,13 +18,13 @@ const (
 	statusError   = 1
 )
 
-type Command struct {
+type Stream struct {
 	outStream io.Writer
 	errStream io.Writer
 }
 
 type CurrentCommand struct {
-	Command
+	Stream
 }
 
 func (c *CurrentCommand) Run(args []string) int {
@@ -47,11 +49,27 @@ func (c *CurrentCommand) Help() string {
 	return fmt.Sprintf(`Usage: %s current`, cmd)
 }
 
+const (
+	ListFormatTable = "table"
+	ListFormatCsv   = "csv"
+	ListFormatTsv   = "tsv"
+)
+
 type ListCommand struct {
-	Command
+	Stream
+	Format string
 }
 
 func (c *ListCommand) Run(args []string) int {
+	flags := flag.NewFlagSet("list", flag.ExitOnError)
+	flags.Usage = func() {
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
+	}
+	flags.StringVar(&c.Format, "format", ListFormatTable, "output format")
+	if err := flags.Parse(args); err != nil {
+		return statusError
+	}
+
 	credentials, err := GetAllCredentials()
 	if err != nil {
 		fmt.Fprintf(c.errStream, "failed to get credentials: %s\n", err)
@@ -69,27 +87,53 @@ func (c *ListCommand) Run(args []string) int {
 		return statusSuccess
 	}
 
-	table := tablewriter.NewWriter(c.outStream)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetHeader([]string{"Credential", "Active", "Project", "Type"})
+	header := []string{"Credential", "Active", "Project", "Type"}
 
-	for _, credential := range credentials {
-		var active string
-		if currentCredential != nil && credential.Name() == currentCredential.Name() {
-			active = "(*)"
+	switch c.Format {
+	case ListFormatTsv:
+		fallthrough
+	case ListFormatCsv:
+		var separator string
+		if c.Format == ListFormatTsv {
+			separator = "\t"
+		} else if c.Format == ListFormatCsv {
+			separator = ","
 		}
-		var projectId string
-		if credential.Type == CredentialTypeServiceAccount {
-			projectId = credential.ProjectId
-		} else {
-			projectId = "-"
+		fmt.Fprintf(c.outStream, strings.Join(header, separator)+"\n")
+		for _, credential := range credentials {
+			active := "false"
+			if currentCredential != nil && credential.Name() == currentCredential.Name() {
+				active = "true"
+			}
+			var projectId string
+			if credential.Type == CredentialTypeServiceAccount {
+				projectId = credential.ProjectId
+			}
+			fmt.Fprintf(c.outStream, "%s%s%s%s%s%s%s\n", credential.Name(), separator, active, separator, projectId, separator, credential.Type.Name())
 		}
-		table.Append([]string{credential.Name(), active, projectId, credential.Type.Name()})
+	default:
+		table := tablewriter.NewWriter(c.outStream)
+		table.SetAutoFormatHeaders(false)
+		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		table.SetAlignment(tablewriter.ALIGN_LEFT)
+		table.SetHeader(header)
+
+		for _, credential := range credentials {
+			var active string
+			if currentCredential != nil && credential.Name() == currentCredential.Name() {
+				active = "(*)"
+			}
+			var projectId string
+			if credential.Type == CredentialTypeServiceAccount {
+				projectId = credential.ProjectId
+			} else {
+				projectId = "-"
+			}
+			table.Append([]string{credential.Name(), active, projectId, credential.Type.Name()})
+		}
+
+		table.Render()
 	}
-
-	table.Render()
 
 	return statusSuccess
 }
@@ -100,11 +144,13 @@ func (c *ListCommand) Synopsis() string {
 
 func (c *ListCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s list`, cmd)
+	return fmt.Sprintf(`Usage: %s list [--format=<format>]
+
+Available formats: table(default), csv, tsv`, cmd)
 }
 
 type ShowCommand struct {
-	Command
+	Stream
 }
 
 func (c *ShowCommand) Run(args []string) int {
@@ -148,7 +194,7 @@ func (c *ShowCommand) Help() string {
 }
 
 type AddCommand struct {
-	Command
+	Stream
 }
 
 func (c *AddCommand) Run(args []string) int {
@@ -194,7 +240,7 @@ func (c *AddCommand) Help() string {
 }
 
 type ExecCommand struct {
-	Command
+	Stream
 }
 
 func (c *ExecCommand) Run(args []string) int {
@@ -259,7 +305,7 @@ func (c *ExecCommand) Help() string {
 }
 
 type EnvCommand struct {
-	Command
+	Stream
 }
 
 func (c *EnvCommand) Run(args []string) int {
@@ -298,7 +344,7 @@ func (c *EnvCommand) Help() string {
 }
 
 type TokenCommand struct {
-	Command
+	Stream
 }
 
 func (c *TokenCommand) Run(args []string) int {

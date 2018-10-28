@@ -31,6 +31,17 @@ func (t CredentialType) Name() string {
 	return ""
 }
 
+var gcloudDefaultCredentialPath string
+
+func init() {
+	currentUser, err := user.Current()
+	if err != nil {
+		fmt.Printf("failed to get current user: %s\n", err)
+		os.Exit(1)
+	}
+	gcloudDefaultCredentialPath = path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
+}
+
 type Credential struct {
 	// for both keys
 	Type     CredentialType `json:"type"`
@@ -56,18 +67,11 @@ type Credential struct {
 }
 
 func GetDefaultCredential() (*Credential, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-
-	filePath := path.Join(currentUser.HomeDir, ".config", "gcloud", "application_default_credentials.json")
-	if _, err := os.Stat(filePath); err != nil {
+	if _, err := os.Stat(gcloudDefaultCredentialPath); err != nil {
 		// application_default_credentials.json not found
 		return nil, nil
 	}
-
-	return readCredentialFile(filePath)
+	return readCredentialFile(gcloudDefaultCredentialPath)
 }
 
 func GetCredentialByPrefixName(name string) (*Credential, error) {

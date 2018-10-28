@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"sort"
 	"strings"
 
 	"golang.org/x/oauth2/google"
@@ -130,6 +131,11 @@ func GetAllCredentials() ([]*Credential, error) {
 	if defaultCredential != nil {
 		credentials = append(credentials, defaultCredential)
 	}
+
+	// sort alphabetically
+	sort.Slice(credentials, func(i, j int) bool {
+		return credentials[i].Name() < credentials[j].Name()
+	})
 
 	return credentials, nil
 }

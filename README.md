@@ -20,3 +20,7 @@ Available commands are:
 ```
 go get -u github.com/yfuruyama/adc
 ```
+
+## TODO
+
+* Support credential from Metadata server

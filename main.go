@@ -26,8 +26,8 @@ func main() {
 				Stream: Stream{os.Stdout, os.Stderr},
 			}, nil
 		},
-		"show": func() (cli.Command, error) {
-			return &ShowCommand{
+		"cat": func() (cli.Command, error) {
+			return &CatCommand{
 				Stream{os.Stdout, os.Stderr},
 			}, nil
 		},

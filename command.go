@@ -41,7 +41,7 @@ func (c *CurrentCommand) Run(args []string) int {
 }
 
 func (c *CurrentCommand) Synopsis() string {
-	return "Show current active credential"
+	return "Show the current active credential"
 }
 
 func (c *CurrentCommand) Help() string {
@@ -149,11 +149,11 @@ func (c *ListCommand) Help() string {
 Available formats: table(default), csv, tsv`, cmd)
 }
 
-type ShowCommand struct {
+type CatCommand struct {
 	Stream
 }
 
-func (c *ShowCommand) Run(args []string) int {
+func (c *CatCommand) Run(args []string) int {
 	if len(args) < 1 {
 		fmt.Fprintf(c.errStream, c.Help()+"\n")
 		return statusError
@@ -184,13 +184,13 @@ func (c *ShowCommand) Run(args []string) int {
 	return statusSuccess
 }
 
-func (c *ShowCommand) Synopsis() string {
-	return "Show credential file content"
+func (c *CatCommand) Synopsis() string {
+	return "Cat the credential content"
 }
 
-func (c *ShowCommand) Help() string {
+func (c *CatCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s show <credential>`, cmd)
+	return fmt.Sprintf(`Usage: %s cat <credential>`, cmd)
 }
 
 type AddCommand struct {

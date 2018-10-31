@@ -9,8 +9,6 @@ import (
 	"path"
 	"strings"
 	"syscall"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 const (
@@ -82,13 +80,6 @@ func (c *ListCommand) Run(args []string) int {
 		return statusError
 	}
 
-	if len(credentials) == 0 {
-		fmt.Fprintf(c.outStream, "No credentials found\n")
-		return statusSuccess
-	}
-
-	header := []string{"Credential", "Active", "Project", "Type"}
-
 	switch c.Format {
 	case ListFormatTsv:
 		fallthrough
@@ -99,7 +90,7 @@ func (c *ListCommand) Run(args []string) int {
 		} else if c.Format == ListFormatCsv {
 			separator = ","
 		}
-		fmt.Fprintf(c.outStream, strings.Join(header, separator)+"\n")
+		fmt.Fprintf(c.outStream, strings.Join([]string{"NAME", "ACTIVE", "PROJECT", "TYPE"}, separator)+"\n")
 		for _, credential := range credentials {
 			active := "false"
 			if currentCredential != nil && credential.Name() == currentCredential.Name() {
@@ -112,27 +103,40 @@ func (c *ListCommand) Run(args []string) int {
 			fmt.Fprintf(c.outStream, "%s%s%s%s%s%s%s\n", credential.Name(), separator, active, separator, projectId, separator, credential.Type.Name())
 		}
 	default:
-		table := tablewriter.NewWriter(c.outStream)
-		table.SetAutoFormatHeaders(false)
-		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		table.SetAlignment(tablewriter.ALIGN_LEFT)
-		table.SetHeader(header)
+		// calculate column widths
+		maxName := len("NAME")
+		maxActive := len("ACTIVE")
+		maxProject := len("PROJECT")
+		maxType := len("TYPE")
+		for _, credential := range credentials {
+			if l := len(credential.Name()); l > maxName {
+				maxName = l
+			}
+			if l := len(credential.ProjectId); l > maxProject {
+				maxProject = l
+			}
+		}
 
+		// print header
+		tmpl := fmt.Sprintf("%%-%ds%%-%ds%%-%ds%%-%ds\n", maxName+3, maxActive+3, maxProject+3, maxType+3) // for space padding
+		fmt.Fprintf(c.outStream, tmpl, "NAME", "ACTIVE", "PROJECT", "TYPE")
+
+		// print rows
 		for _, credential := range credentials {
 			var active string
 			if currentCredential != nil && credential.Name() == currentCredential.Name() {
-				active = "(*)"
-			}
-			var projectId string
-			if credential.Type == CredentialTypeServiceAccount {
-				projectId = credential.ProjectId
+				active = "*"
 			} else {
-				projectId = "-"
+				active = "-"
 			}
-			table.Append([]string{credential.Name(), active, projectId, credential.Type.Name()})
+			var project string
+			if credential.Type == CredentialTypeServiceAccount {
+				project = credential.ProjectId
+			} else {
+				project = "-"
+			}
+			fmt.Fprintf(c.outStream, tmpl, credential.Name(), active, project, credential.Type.Name())
 		}
-
-		table.Render()
 	}
 
 	return statusSuccess

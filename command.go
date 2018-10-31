@@ -21,30 +21,32 @@ type Stream struct {
 	errStream io.Writer
 }
 
-type CurrentCommand struct {
+type ActiveCommand struct {
 	Stream
 }
 
-func (c *CurrentCommand) Run(args []string) int {
-	credential, err := GetCurrentCredential()
+func (c *ActiveCommand) Run(args []string) int {
+	credential, err := GetActiveCredential()
 	if err != nil {
-		fmt.Fprintf(c.errStream, "failed to get current credential: %s\n", err)
+		fmt.Fprintf(c.errStream, "failed to get active credential: %s\n", err)
+		return statusError
+	}
+	if credential == nil {
+		fmt.Fprintf(c.errStream, "No active credential found\n")
 		return statusError
 	}
 
-	if credential != nil {
-		fmt.Fprintf(c.outStream, credential.Name()+"\n")
-	}
+	fmt.Fprintf(c.outStream, credential.Name()+"\n")
 	return statusSuccess
 }
 
-func (c *CurrentCommand) Synopsis() string {
-	return "Show the current active credential"
+func (c *ActiveCommand) Synopsis() string {
+	return "Print which credential is active"
 }
 
-func (c *CurrentCommand) Help() string {
+func (c *ActiveCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s current`, cmd)
+	return fmt.Sprintf(`Usage: %s active`, cmd)
 }
 
 const (
@@ -74,9 +76,9 @@ func (c *ListCommand) Run(args []string) int {
 		return statusError
 	}
 
-	currentCredential, err := GetCurrentCredential()
+	activeCredential, err := GetActiveCredential()
 	if err != nil {
-		fmt.Fprintf(c.errStream, "failed to get current active credential: %s\n", err)
+		fmt.Fprintf(c.errStream, "failed to get active credential: %s\n", err)
 		return statusError
 	}
 
@@ -93,7 +95,7 @@ func (c *ListCommand) Run(args []string) int {
 		fmt.Fprintf(c.outStream, strings.Join([]string{"NAME", "ACTIVE", "PROJECT", "TYPE"}, separator)+"\n")
 		for _, credential := range credentials {
 			active := "false"
-			if currentCredential != nil && credential.Name() == currentCredential.Name() {
+			if activeCredential != nil && credential.Name() == activeCredential.Name() {
 				active = "true"
 			}
 			var projectId string
@@ -124,7 +126,7 @@ func (c *ListCommand) Run(args []string) int {
 		// print rows
 		for _, credential := range credentials {
 			var active string
-			if currentCredential != nil && credential.Name() == currentCredential.Name() {
+			if activeCredential != nil && credential.Name() == activeCredential.Name() {
 				active = "*"
 			} else {
 				active = "-"
@@ -148,9 +150,10 @@ func (c *ListCommand) Synopsis() string {
 
 func (c *ListCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s list [--format=<format>]
+	return fmt.Sprintf(`Usage: %s ls [OPTIONS]
 
-Available formats: table(default), csv, tsv`, cmd)
+Options:
+   --format    Output format: table(default), csv, tsv`, cmd)
 }
 
 type CatCommand struct {
@@ -189,7 +192,7 @@ func (c *CatCommand) Run(args []string) int {
 }
 
 func (c *CatCommand) Synopsis() string {
-	return "Cat the credential itself"
+	return "Cat credential content"
 }
 
 func (c *CatCommand) Help() string {
@@ -300,7 +303,7 @@ func (c *ExecCommand) Run(args []string) int {
 }
 
 func (c *ExecCommand) Synopsis() string {
-	return "Execute the command with the specified credential"
+	return "Execute command with the specified credential"
 }
 
 func (c *ExecCommand) Help() string {
@@ -310,41 +313,62 @@ func (c *ExecCommand) Help() string {
 
 type EnvCommand struct {
 	Stream
+	IsUnset bool
 }
 
 func (c *EnvCommand) Run(args []string) int {
-	if len(args) < 1 {
+	flags := flag.NewFlagSet("env", flag.ExitOnError)
+	flags.Usage = func() {
 		fmt.Fprintf(c.errStream, c.Help()+"\n")
-		return statusError
 	}
-	credentialName := args[0]
-
-	credential, err := GetCredentialByPrefixName(credentialName)
-	if err != nil {
-		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
-		return statusError
-	}
-	if credential == nil {
-		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+	flags.BoolVar(&c.IsUnset, "unset", false, "Unset variables instead of setting them")
+	if err := flags.Parse(args); err != nil {
 		return statusError
 	}
 
-	cmd := os.Args[0]
-	fmt.Fprintf(c.outStream, `export GOOGLE_APPLICATION_CREDENTIALS="%s"
+	if c.IsUnset {
+		cmd := os.Args[0]
+		fmt.Fprintf(c.outStream, `unset GOOGLE_APPLICATION_CREDENTIALS
+# Run this command to configure your shell:
+# eval "$(%s env --unset)"
+`, cmd)
+	} else {
+		if len(args) < 1 {
+			fmt.Fprintf(c.errStream, c.Help()+"\n")
+			return statusError
+		}
+		credentialName := args[0]
+
+		credential, err := GetCredentialByPrefixName(credentialName)
+		if err != nil {
+			fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
+			return statusError
+		}
+		if credential == nil {
+			fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+			return statusError
+		}
+
+		cmd := os.Args[0]
+		fmt.Fprintf(c.outStream, `export GOOGLE_APPLICATION_CREDENTIALS="%s"
 # Run this command to configure your shell:
 # eval "$(%s env %s)"
 `, credential.filePath, cmd, credential.Name())
+	}
 
 	return statusSuccess
 }
 
 func (c *EnvCommand) Synopsis() string {
-	return "Display the commands to set up the credential environment for application"
+	return "Display commands to set up the credential environment for application"
 }
 
 func (c *EnvCommand) Help() string {
 	cmd := os.Args[0]
-	return fmt.Sprintf(`Usage: %s env <credential>`, cmd)
+	return fmt.Sprintf(`Usage: %s env [OPTIONS] [<credential>]
+
+Options:
+   --unset    Unset variables instead of setting them`, cmd)
 }
 
 type TokenCommand struct {

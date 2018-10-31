@@ -20,7 +20,7 @@ func main() {
 	c := cli.NewCLI("adc", "0.0.1")
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
-		"list": func() (cli.Command, error) {
+		"ls": func() (cli.Command, error) {
 			return &ListCommand{
 				Format: ListFormatTable,
 				Stream: Stream{os.Stdout, os.Stderr},
@@ -36,8 +36,8 @@ func main() {
 				Stream{os.Stdout, os.Stderr},
 			}, nil
 		},
-		"current": func() (cli.Command, error) {
-			return &CurrentCommand{
+		"active": func() (cli.Command, error) {
+			return &ActiveCommand{
 				Stream{os.Stdout, os.Stderr},
 			}, nil
 		},
@@ -48,7 +48,8 @@ func main() {
 		},
 		"env": func() (cli.Command, error) {
 			return &EnvCommand{
-				Stream{os.Stdout, os.Stderr},
+				IsUnset: false,
+				Stream:  Stream{os.Stdout, os.Stderr},
 			}, nil
 		},
 		"token": func() (cli.Command, error) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestCurrentCommand(t *testing.T) {
+func TestActiveCommand(t *testing.T) {
 	t.Run("env variable set", func(t *testing.T) {
 		outStream, errStream := new(bytes.Buffer), new(bytes.Buffer)
 		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "fixtures/service_account_credential_001.json")
@@ -14,7 +14,7 @@ func TestCurrentCommand(t *testing.T) {
 			os.Unsetenv("GOOGLE_APPLICATION_CREDENTIALS")
 		}()
 
-		cmd := &CurrentCommand{Stream{outStream, errStream}}
+		cmd := &ActiveCommand{Stream{outStream, errStream}}
 		cmd.Run([]string{})
 
 		got := outStream.String()
@@ -28,7 +28,7 @@ func TestCurrentCommand(t *testing.T) {
 		outStream, errStream := new(bytes.Buffer), new(bytes.Buffer)
 		gcloudDefaultCredentialPath = "fixtures/user_credential_001.json"
 
-		cmd := &CurrentCommand{Stream{outStream, errStream}}
+		cmd := &ActiveCommand{Stream{outStream, errStream}}
 		cmd.Run([]string{})
 
 		got := outStream.String()
@@ -42,7 +42,7 @@ func TestCurrentCommand(t *testing.T) {
 		outStream, errStream := new(bytes.Buffer), new(bytes.Buffer)
 		gcloudDefaultCredentialPath = "fixtures/not_exists.json"
 
-		cmd := &CurrentCommand{Stream{outStream, errStream}}
+		cmd := &ActiveCommand{Stream{outStream, errStream}}
 		cmd.Run([]string{})
 
 		got := outStream.String()

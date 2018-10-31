@@ -144,7 +144,7 @@ func GetAllCredentials() ([]*Credential, error) {
 	return credentials, nil
 }
 
-func GetCurrentCredential() (*Credential, error) {
+func GetActiveCredential() (*Credential, error) {
 	if envVar := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); envVar != "" {
 		if _, err := os.Stat(envVar); err == nil {
 			return GetCredentialByPath(envVar)

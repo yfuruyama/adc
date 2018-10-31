@@ -5,13 +5,13 @@ adc - Application Default Credentials manager for GCP [![CircleCI](https://circl
 Usage: adc [--version] [--help] <command> [<args>]
 
 Available commands are:
-    add        Add service account credential
-    cat        Cat the credential itself
-    current    Show the current active credential
-    env        Display the commands to set up the credential environment for application
-    exec       Execute the command with the specified credential
-    list       Show available credentials
-    token      Prints access token for the credential
+    active    Print which credential is active
+    add       Add service account credential
+    cat       Cat credential content
+    env       Display commands to set up the credential environment for application
+    exec      Execute command with the specified credential
+    ls        Show available credentials
+    token     Prints access token for the credential
 ```
 
 ## Install

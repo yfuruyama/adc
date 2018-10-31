@@ -285,6 +285,7 @@ func (c *ExecCommand) Run(args []string) int {
 	env = append(env, "GOOGLE_APPLICATION_CREDENTIALS="+credential.filePath)
 
 	cmd := exec.Command(child, childArgs...)
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = env

@@ -6,7 +6,7 @@ Usage: adc [--version] [--help] <command> [<args>]
 
 Available commands are:
     add        Add service account credential
-    cat        Cat the credential content
+    cat        Cat the credential itself
     current    Show the current active credential
     env        Display the commands to set up the credential environment for application
     exec       Execute the command with the specified credential

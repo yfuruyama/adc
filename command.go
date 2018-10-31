@@ -185,7 +185,7 @@ func (c *CatCommand) Run(args []string) int {
 }
 
 func (c *CatCommand) Synopsis() string {
-	return "Cat the credential content"
+	return "Cat the credential itself"
 }
 
 func (c *CatCommand) Help() string {

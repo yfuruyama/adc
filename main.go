@@ -22,7 +22,7 @@ func main() {
 	c.Commands = map[string]cli.CommandFactory{
 		"ls": func() (cli.Command, error) {
 			return &ListCommand{
-				Format: ListFormatTable,
+				Format: ListFormatStandard,
 				Stream: Stream{os.Stdout, os.Stderr},
 			}, nil
 		},

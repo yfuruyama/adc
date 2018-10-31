@@ -50,9 +50,9 @@ func (c *ActiveCommand) Help() string {
 }
 
 const (
-	ListFormatTable = "table"
-	ListFormatCsv   = "csv"
-	ListFormatTsv   = "tsv"
+	ListFormatStandard = "standard"
+	ListFormatCsv      = "csv"
+	ListFormatTsv      = "tsv"
 )
 
 type ListCommand struct {
@@ -65,7 +65,7 @@ func (c *ListCommand) Run(args []string) int {
 	flags.Usage = func() {
 		fmt.Fprintf(c.errStream, c.Help()+"\n")
 	}
-	flags.StringVar(&c.Format, "format", ListFormatTable, "output format")
+	flags.StringVar(&c.Format, "format", ListFormatStandard, "output format")
 	if err := flags.Parse(args); err != nil {
 		return statusError
 	}
@@ -153,7 +153,7 @@ func (c *ListCommand) Help() string {
 	return fmt.Sprintf(`Usage: %s ls [OPTIONS]
 
 Options:
-   --format    Output format: table(default), csv, tsv`, cmd)
+   --format    Output format: standard(default), csv, tsv`, cmd)
 }
 
 type CatCommand struct {

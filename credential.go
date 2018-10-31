@@ -191,6 +191,14 @@ func (c *Credential) GetAccessToken() (string, error) {
 	return token.AccessToken, nil
 }
 
+func (c *Credential) Remove() error {
+	if c.Type == CredentialTypeUserAccount {
+		return fmt.Errorf("user account credential can not be removed with adc, please use `gcloud auth application-default revoke` instead")
+	}
+
+	return os.Remove(c.filePath)
+}
+
 func InitCredentialsStore() error {
 	path, err := GetCredentialStorePath()
 	if err != nil {

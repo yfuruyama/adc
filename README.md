@@ -19,6 +19,7 @@ Available commands are:
     env       Display commands to set up the credential environment for application
     exec      Execute command with the specified credential
     ls        Show all credentials
+    rm        Remove service account credential
     token     Prints access token for the credential
 ```
 

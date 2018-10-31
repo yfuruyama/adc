@@ -36,6 +36,11 @@ func main() {
 				Stream{os.Stdout, os.Stderr},
 			}, nil
 		},
+		"rm": func() (cli.Command, error) {
+			return &RemoveCommand{
+				Stream{os.Stdout, os.Stderr},
+			}, nil
+		},
 		"active": func() (cli.Command, error) {
 			return &ActiveCommand{
 				Stream{os.Stdout, os.Stderr},

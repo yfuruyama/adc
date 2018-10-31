@@ -239,7 +239,9 @@ func (c *AddCommand) Run(args []string) int {
 		return statusError
 	}
 
-	fmt.Fprintf(c.outStream, "Added to credentials store: %s\n", destPath)
+	credential, _ := GetCredentialByPath(destPath)
+
+	fmt.Fprintf(c.outStream, "Added credential `%s`\n", credential.Name())
 	return statusSuccess
 }
 
@@ -250,6 +252,46 @@ func (c *AddCommand) Synopsis() string {
 func (c *AddCommand) Help() string {
 	cmd := os.Args[0]
 	return fmt.Sprintf(`Usage: %s add <SERVICE_ACCOUNT_CREDENTIAL_KEY.json>`, cmd)
+}
+
+type RemoveCommand struct {
+	Stream
+}
+
+func (c *RemoveCommand) Run(args []string) int {
+	if len(args) < 1 {
+		fmt.Fprintf(c.errStream, c.Help()+"\n")
+		return statusError
+	}
+	credentialName := args[0]
+
+	credential, err := GetCredentialByPrefixName(credentialName)
+	if err != nil {
+		fmt.Fprintf(c.errStream, "failed to get credential: %s\n", err)
+		return statusError
+	}
+	if credential == nil {
+		fmt.Fprintf(c.errStream, "Credential `%s` not found\n", credentialName)
+		return statusError
+	}
+
+	if err := credential.Remove(); err != nil {
+		fmt.Fprintf(c.errStream, "failed to remove credential: %s\n", err)
+		return statusError
+	}
+
+	fmt.Fprintf(c.outStream, "Removed credential `%s`\n", credential.Name())
+
+	return statusSuccess
+}
+
+func (c *RemoveCommand) Synopsis() string {
+	return "Remove service account credential"
+}
+
+func (c *RemoveCommand) Help() string {
+	cmd := os.Args[0]
+	return fmt.Sprintf(`Usage: %s rm <credential>`, cmd)
 }
 
 type ExecCommand struct {

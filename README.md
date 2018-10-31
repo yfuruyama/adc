@@ -1,9 +1,9 @@
 adc - Application Default Credentials manager for GCP [![CircleCI](https://circleci.com/gh/yfuruyama/adc.svg?style=svg)](https://circleci.com/gh/yfuruyama/adc)
 ===
 
-adc is a tool for managing GCP credentials such as service account keys and user credentials which are used as [Application Default Credentials](https://cloud.google.com/docs/authentication/production)(ADC).
+adc is a tool for managing GCP credentials such as service account keys or user credentials which are used as [Application Default Credentials](https://cloud.google.com/docs/authentication/production) (ADC) from your application.
 
-With this tool, you will be free from credential management problems like, *There are unknown service account keys in my Downloads folder*.
+With this tool, you will be free from the typical credential management problem: *There are always unknown service account keys in my Downloads folder.*
 
 ## Usage
 

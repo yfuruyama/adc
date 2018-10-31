@@ -117,6 +117,8 @@ func GetAllCredentials() ([]*Credential, error) {
 	}
 
 	credentials := make([]*Credential, 0)
+
+	// add service account credentials
 	for _, fileinfo := range fileinfoList {
 		fileName := fileinfo.Name()
 		filePath := path.Join(storePath, fileName)
@@ -127,19 +129,19 @@ func GetAllCredentials() ([]*Credential, error) {
 		credentials = append(credentials, credential)
 	}
 
-	// add user account credential
+	// sort alphabetically
+	sort.Slice(credentials, func(i, j int) bool {
+		return credentials[i].Name() < credentials[j].Name()
+	})
+
+	// finally, add user account credential at first
 	defaultCredential, err := GetDefaultCredential()
 	if err != nil {
 		return nil, err
 	}
 	if defaultCredential != nil {
-		credentials = append(credentials, defaultCredential)
+		credentials = append([]*Credential{defaultCredential}, credentials...)
 	}
-
-	// sort alphabetically
-	sort.Slice(credentials, func(i, j int) bool {
-		return credentials[i].Name() < credentials[j].Name()
-	})
 
 	return credentials, nil
 }
@@ -156,13 +158,24 @@ func GetActiveCredential() (*Credential, error) {
 func (c *Credential) Name() string {
 	switch c.Type {
 	case CredentialTypeUserAccount:
-		return "authorized_user"
+		return "user"
 	case CredentialTypeServiceAccount:
-		parts := strings.Split(c.ClientEmail, "@")
-		serviceAccountId := parts[0]
-		return fmt.Sprintf("%s-%s", serviceAccountId, c.PrivateKeyId[0:6])
+		if len(c.PrivateKeyId) > 12 {
+			return c.PrivateKeyId[0:12]
+		} else {
+			return c.PrivateKeyId
+		}
 	}
 	return ""
+}
+
+func (c *Credential) ServiceAccountName() string {
+	if c.Type != CredentialTypeServiceAccount {
+		return ""
+	}
+
+	parts := strings.Split(c.ClientEmail, "@")
+	return parts[0]
 }
 
 func (c *Credential) GetAccessToken() (string, error) {

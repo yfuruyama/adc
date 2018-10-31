@@ -10,7 +10,7 @@ Available commands are:
     cat       Cat credential content
     env       Display commands to set up the credential environment for application
     exec      Execute command with the specified credential
-    ls        Show available credentials
+    ls        Show all credentials
     token     Prints access token for the credential
 ```
 

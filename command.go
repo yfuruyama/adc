@@ -92,7 +92,7 @@ func (c *ListCommand) Run(args []string) int {
 		} else if c.Format == ListFormatCsv {
 			separator = ","
 		}
-		fmt.Fprintf(c.outStream, strings.Join([]string{"NAME", "ACTIVE", "PROJECT", "TYPE"}, separator)+"\n")
+		fmt.Fprintf(c.outStream, strings.Join([]string{"NAME", "ACTIVE", "PROJECT", "SERVICE_ACCOUNT", "TYPE"}, separator)+"\n")
 		for _, credential := range credentials {
 			active := "false"
 			if activeCredential != nil && credential.Name() == activeCredential.Name() {
@@ -102,13 +102,14 @@ func (c *ListCommand) Run(args []string) int {
 			if credential.Type == CredentialTypeServiceAccount {
 				projectId = credential.ProjectId
 			}
-			fmt.Fprintf(c.outStream, "%s%s%s%s%s%s%s\n", credential.Name(), separator, active, separator, projectId, separator, credential.Type.Name())
+			fmt.Fprintf(c.outStream, "%s%s%s%s%s%s%s%s%s\n", credential.Name(), separator, active, separator, projectId, separator, credential.ServiceAccountName(), separator, credential.Type.Name())
 		}
 	default:
 		// calculate column widths
 		maxName := len("NAME")
 		maxActive := len("ACTIVE")
 		maxProject := len("PROJECT")
+		maxServiceAccount := len("SERVICE_ACCOUNT")
 		maxType := len("TYPE")
 		for _, credential := range credentials {
 			if l := len(credential.Name()); l > maxName {
@@ -117,11 +118,14 @@ func (c *ListCommand) Run(args []string) int {
 			if l := len(credential.ProjectId); l > maxProject {
 				maxProject = l
 			}
+			if l := len(credential.ServiceAccountName()); l > maxServiceAccount {
+				maxServiceAccount = l
+			}
 		}
 
 		// print header
-		tmpl := fmt.Sprintf("%%-%ds%%-%ds%%-%ds%%-%ds\n", maxName+3, maxActive+3, maxProject+3, maxType+3) // for space padding
-		fmt.Fprintf(c.outStream, tmpl, "NAME", "ACTIVE", "PROJECT", "TYPE")
+		tmpl := fmt.Sprintf("%%-%ds%%-%ds%%-%ds%%-%ds%%-%ds\n", maxName+3, maxActive+3, maxProject+3, maxServiceAccount+3, maxType+3) // for space padding
+		fmt.Fprintf(c.outStream, tmpl, "NAME", "ACTIVE", "PROJECT", "SERVICE_ACCOUNT", "TYPE")
 
 		// print rows
 		for _, credential := range credentials {
@@ -131,13 +135,15 @@ func (c *ListCommand) Run(args []string) int {
 			} else {
 				active = "-"
 			}
-			var project string
-			if credential.Type == CredentialTypeServiceAccount {
-				project = credential.ProjectId
-			} else {
+			project := credential.ProjectId
+			if project == "" {
 				project = "-"
 			}
-			fmt.Fprintf(c.outStream, tmpl, credential.Name(), active, project, credential.Type.Name())
+			serviceAccount := credential.ServiceAccountName()
+			if serviceAccount == "" {
+				serviceAccount = "-"
+			}
+			fmt.Fprintf(c.outStream, tmpl, credential.Name(), active, project, serviceAccount, credential.Type.Name())
 		}
 	}
 
@@ -145,7 +151,7 @@ func (c *ListCommand) Run(args []string) int {
 }
 
 func (c *ListCommand) Synopsis() string {
-	return "Show available credentials"
+	return "Show all credentials"
 }
 
 func (c *ListCommand) Help() string {

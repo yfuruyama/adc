@@ -18,7 +18,7 @@ func TestActiveCommand(t *testing.T) {
 		cmd.Run([]string{})
 
 		got := outStream.String()
-		expected := "service_account_credential_001-012345\n"
+		expected := "0123456789ab\n"
 		if got != expected {
 			t.Errorf("expected = %s, but got = %s", expected, got)
 		}
@@ -32,7 +32,7 @@ func TestActiveCommand(t *testing.T) {
 		cmd.Run([]string{})
 
 		got := outStream.String()
-		expected := "authorized_user\n"
+		expected := "user\n"
 		if got != expected {
 			t.Errorf("expected = %s, but got = %s", expected, got)
 		}

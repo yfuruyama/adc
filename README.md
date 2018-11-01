@@ -31,5 +31,4 @@ go get -u github.com/yfuruyama/adc
 
 ## TODO
 
-* Remove credential
 * Support credential from Metadata server

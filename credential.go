@@ -97,7 +97,14 @@ func GetCredentialByPrefixName(name string) (*Credential, error) {
 }
 
 func GetCredentialByPath(path string) (*Credential, error) {
-	return readCredentialFile(path)
+	credential, err := readCredentialFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if credential.Type == "" || credential.ClientId == "" {
+		return nil, fmt.Errorf("not credential file")
+	}
+	return credential, nil
 }
 
 func GetAllCredentials() ([]*Credential, error) {

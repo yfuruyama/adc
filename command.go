@@ -217,9 +217,13 @@ func (c *AddCommand) Run(args []string) int {
 	}
 
 	filePath := args[0]
-	credentialName := path.Base(filePath)
 
-	// TODO: check valid credential
+	// validation
+	if _, err := GetCredentialByPath(filePath); err != nil {
+		fmt.Fprintf(c.errStream, "validation failed: %s\n", err)
+		return statusError
+	}
+
 	src, err := os.Open(filePath)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "failed to read credential file: %s\n", err)
@@ -231,9 +235,11 @@ func (c *AddCommand) Run(args []string) int {
 		fmt.Fprintf(c.errStream, "failed to add credential file: %s\n", err)
 		return statusError
 	}
-	destPath := path.Join(storePath, credentialName)
+
+	destPath := path.Join(storePath, path.Base(filePath))
 	dest, err := os.Create(destPath)
 
+	// add credential file by copy to keep file integrity
 	if _, err := io.Copy(dest, src); err != nil {
 		fmt.Fprintf(c.errStream, "failed to add credential file: %s\n", err)
 		return statusError

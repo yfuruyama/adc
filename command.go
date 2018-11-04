@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 	"syscall"
+	"text/tabwriter"
 )
 
 const (
@@ -105,27 +106,9 @@ func (c *ListCommand) Run(args []string) int {
 			fmt.Fprintf(c.outStream, "%s%s%s%s%s%s%s%s%s\n", credential.Name(), separator, active, separator, projectId, separator, credential.ServiceAccountName(), separator, credential.Type.Name())
 		}
 	default:
-		// calculate column widths
-		maxName := len("NAME")
-		maxActive := len("ACTIVE")
-		maxProject := len("PROJECT")
-		maxServiceAccount := len("SERVICE_ACCOUNT")
-		maxType := len("TYPE")
-		for _, credential := range credentials {
-			if l := len(credential.Name()); l > maxName {
-				maxName = l
-			}
-			if l := len(credential.ProjectId); l > maxProject {
-				maxProject = l
-			}
-			if l := len(credential.ServiceAccountName()); l > maxServiceAccount {
-				maxServiceAccount = l
-			}
-		}
-
+		w := tabwriter.NewWriter(c.outStream, 0, 0, 3, ' ', 0)
 		// print header
-		tmpl := fmt.Sprintf("%%-%ds%%-%ds%%-%ds%%-%ds%%-%ds\n", maxName+3, maxActive+3, maxProject+3, maxServiceAccount+3, maxType+3) // for space padding
-		fmt.Fprintf(c.outStream, tmpl, "NAME", "ACTIVE", "PROJECT", "SERVICE_ACCOUNT", "TYPE")
+		fmt.Fprintln(w, "NAME\tACTIVE\tPROJECT\tSERVICE_ACCOUNT\tTYPE")
 
 		// print rows
 		for _, credential := range credentials {
@@ -143,8 +126,9 @@ func (c *ListCommand) Run(args []string) int {
 			if serviceAccount == "" {
 				serviceAccount = "-"
 			}
-			fmt.Fprintf(c.outStream, tmpl, credential.Name(), active, project, serviceAccount, credential.Type.Name())
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", credential.Name(), active, project, serviceAccount, credential.Type.Name())
 		}
+		w.Flush()
 	}
 
 	return statusSuccess

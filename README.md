@@ -25,6 +25,10 @@ Available commands are:
 
 ## Install
 
+You can get the latest binary from [Releases](https://github.com/yfuruyama/adc/releases).
+
+Or if you have installed `go`, just execute `go get` from your console.
+
 ```
 go get -u github.com/yfuruyama/adc
 ```

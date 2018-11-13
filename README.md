@@ -9,18 +9,79 @@ With this tool, you will be free from the typical credential management problem:
 
 ![gif](https://github.com/yfuruyama/adc/blob/master/screencast.gif)
 
-```
-Usage: adc [--version] [--help] <command> [<args>]
+### adc ls
 
-Available commands are:
-    active    Print which credential is active
-    add       Add service account credential
-    cat       Cat credential content
-    env       Display commands to set up the credential environment for application
-    exec      Execute command with the specified credential
-    ls        Show all credentials
-    rm        Remove service account credential
-    token     Prints access token for the credential
+`adc ls` shows all registered credentials.
+
+```sh
+$ adc ls
+NAME           ACTIVE   PROJECT           SERVICE_ACCOUNT       TYPE
+user           -        -                 -                     User Account
+27f98a8b3b11   *        my-project        storage-admin         Service Account
+e3b36c383e05   -        my-project        bigquery-user         Service Account
+e50710fb4883   -        another-project   cloud-kms-encryptor   Service Account
+```
+
+### adc add
+
+`adc add <CREDENTIAL.json>` adds a service account credential to adc.  
+After adding the credential, you can delete the original one.
+
+```sh
+$ adc add ~/Downloads/my-service-account-key-e50710fb4883.json
+Added credential `e50710fb4883`
+
+# remove the original one (optional)
+$ rm ~/Downloads/my-service-account-key-e50710fb4883.json
+```
+
+### adc exec
+
+`adc exec <CREDENTIAL>` executes an arbitrary command with specified credential.  
+You can specify `<CREDENTIAL>` with first several characters of the credential.
+
+```sh
+# execute `terraform plan` with the credential `27f98a8b3b11`
+$ adc exec 27f -- terraform plan
+```
+
+### adc active
+
+`adc active` shows current active credential.
+
+```sh
+$ adc active
+27f98a8b3b11
+```
+
+### adc env
+
+`adc env` displays commands to active the credential for current shell.
+
+```sh
+# set environment variable
+$ eval "$(adc env 27f)"
+
+# following commands are executed with the credential `27f98a8b3b11`
+$ terraform execute
+```
+
+### adc token
+
+`adc token <CREDENTIAL>` prints access token for the credential.
+
+```sh
+$ adc token 27f
+ya29.c.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### adc rm
+
+`adc rm <CREDENTIAL>` removes a service account credential.
+
+```sh
+$ adc rm 27f
+Removed credential `27f98a8b3b11`
 ```
 
 ## Install

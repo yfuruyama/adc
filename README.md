@@ -1,13 +1,20 @@
 adc - Application Default Credentials manager for GCP [![CircleCI](https://circleci.com/gh/yfuruyama/adc.svg?style=svg)](https://circleci.com/gh/yfuruyama/adc)
 ===
 
-adc is a tool for managing GCP credentials such as service account keys or user credentials which are used as [Application Default Credentials](https://cloud.google.com/docs/authentication/production) (ADC) from your application.
+adc is a tool for managing [Application Default Credentials](https://cloud.google.com/docs/authentication/production) (ADC), service account keys and user credentials for GCP applications.
 
-With this tool, you will be free from the typical credential management problem: There are a lot of service account keys in my Downloads folder.
+## Background
 
-## Usage
+While [Application Default Credentials](https://cloud.google.com/docs/authentication/production) (ADC) are great ways for authenticating your applications with GCP services, there are no standard rules for managing the credentials themself.
+You can manage service account keys in your way, but someday you will find your Download folder is filled up with multiple service account keys.
+
+With this tool, you can manage those credentials with simple commands and will be free from credential management problems.
+
+## Demo
 
 ![gif](https://github.com/yfuruyama/adc/blob/master/screencast.gif)
+
+## Usage
 
 ### adc ls
 
@@ -24,8 +31,8 @@ e50710fb4883   -        another-project   cloud-kms-encryptor   Service Account
 
 ### adc add
 
-`adc add <CREDENTIAL.json>` adds a service account credential to adc.  
-After adding the credential, you can delete the original one.
+`adc add <CREDENTIAL.json>` adds a service account credential to adc.
+After adding the credential, you can delete the original one safely.
 
 ```sh
 $ adc add ~/Downloads/my-service-account-key-e50710fb4883.json
@@ -37,8 +44,8 @@ $ rm ~/Downloads/my-service-account-key-e50710fb4883.json
 
 ### adc exec
 
-`adc exec <CREDENTIAL>` executes an arbitrary command with specified credential.  
-You can specify `<CREDENTIAL>` with first several characters of the credential.
+`adc exec <CREDENTIAL>` executes an arbitrary command with the specified credential.  
+You can specify `<CREDENTIAL>` with just first several characters of the credential.
 
 ```sh
 # execute `terraform plan` with the credential `27f98a8b3b11`
@@ -56,7 +63,7 @@ $ adc active
 
 ### adc env
 
-`adc env` displays commands to active the credential for current shell.
+`adc env` displays commands to activate the credential for the current shell.
 
 ```sh
 # set environment variable
@@ -68,7 +75,7 @@ $ terraform execute
 
 ### adc token
 
-`adc token <CREDENTIAL>` prints access token for the credential.
+`adc token <CREDENTIAL>` prints an access token for the credential.
 
 ```sh
 $ adc token 27f

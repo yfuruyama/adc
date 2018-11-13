@@ -31,14 +31,14 @@ e50710fb4883   -        another-project   cloud-kms-encryptor   Service Account
 
 ### adc add
 
-`adc add <CREDENTIAL.json>` adds a service account credential to adc.
-After adding the credential, you can delete the original one safely.
+`adc add <CREDENTIAL.json>` adds a service account credential to adc.  
+After adding the credential, you can delete the original credential if you want to do.
 
 ```sh
 $ adc add ~/Downloads/my-service-account-key-e50710fb4883.json
 Added credential `e50710fb4883`
 
-# remove the original one (optional)
+# remove the original credential (optional)
 $ rm ~/Downloads/my-service-account-key-e50710fb4883.json
 ```
 
